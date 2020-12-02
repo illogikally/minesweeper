@@ -1,0 +1,51 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://scripts/Clock.gd" type="Script" id=1]
+[ext_resource path="res://assets/clock/clock1.png" type="Texture" id=2]
+[ext_resource path="res://assets/clock/clock2.png" type="Texture" id=3]
+[ext_resource path="res://assets/clock/clock0.png" type="Texture" id=4]
+[ext_resource path="res://assets/button/restart_disable.png" type="Texture" id=5]
+[ext_resource path="res://scripts/face.gd" type="Script" id=6]
+
+[node name="Clock" type="Node2D"]
+script = ExtResource( 1 )
+
+[node name="clock1" type="Sprite" parent="."]
+pause_mode = 1
+position = Vector2( 239, 32 )
+scale = Vector2( 1.3, 1.3 )
+texture = ExtResource( 4 )
+
+[node name="clock2" type="Sprite" parent="."]
+pause_mode = 1
+position = Vector2( 360, 32 )
+scale = Vector2( 1.3, 1.3 )
+texture = ExtResource( 2 )
+
+[node name="clock3" type="Sprite" parent="."]
+pause_mode = 1
+position = Vector2( 376, 32 )
+scale = Vector2( 1.3, 1.3 )
+texture = ExtResource( 3 )
+
+[node name="clock4" type="Sprite" parent="."]
+position = Vector2( 40, 32 )
+scale = Vector2( 1.3, 1.3 )
+texture = ExtResource( 4 )
+
+[node name="clock5" type="Sprite" parent="."]
+position = Vector2( 63, 104 )
+scale = Vector2( 1.3, 1.3 )
+texture = ExtResource( 4 )
+
+[node name="clock6" type="Sprite" parent="."]
+position = Vector2( 72, 32 )
+scale = Vector2( 1.3, 1.3 )
+texture = ExtResource( 4 )
+
+[node name="face" type="Sprite" parent="."]
+pause_mode = 2
+position = Vector2( 146, 32 )
+scale = Vector2( 1.3, 1.3 )
+texture = ExtResource( 5 )
+script = ExtResource( 6 )

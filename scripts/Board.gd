@@ -6,36 +6,51 @@ class Square:
 	var isRevealed: bool
 	var isMine: bool
 	var value: int
-	var isMarked: bool
+	var isFlagged: bool
 	var tile: Sprite
 	
+	func change_texture(texture: Resource):
+		tile.texture = texture 
+
+signal change_face(face)
+signal game_over
+
 var BOARD = []
-var sprite_tiles = []
-var BOARD_H = 30
-var BOARD_W = 30
-var SQUARE_SIZE = 16
+var square_textures = {}
+var BOARD_H = 16
+var BOARD_W = BOARD_H
+onready var SCALE = get_parent().SCALE
+onready var SQUARE_SIZE = 16 * SCALE
+
 var NUM_OF_MINES: int = BOARD_H * BOARD_W / 9
-var marks = NUM_OF_MINES
-var isGameOver = false
+var flags = NUM_OF_MINES
 var revealed = 0
-export var SCALE = 1.3
+
+
 
 func _ready():
-	OS.window_size = Vector2(16*1.3*BOARD_W, 16*1.3*BOARD_H+65)
-	_load_tiles()
+	OS.window_size = Vector2(SQUARE_SIZE*BOARD_W, SQUARE_SIZE*BOARD_H+65)
+	_load_square_textures()
 	_init_board()
-	
-	
-func restart():
-	isGameOver = false
+
+func _load_square_textures():
+	var textures = get_parent().load_resource_dir("res://assets/tiles")
+	var names = [
+		"1", "2", "3", "4", "5", "6", "7", "8", "0", "flag", "hidden", \
+		"mine", "mine_red"
+	]
+	for i in range(names.size()):
+		square_textures[names[i]] = textures[i]
+		
+func restart() -> void:
 	revealed = 0
-	marks = NUM_OF_MINES
+	flags = NUM_OF_MINES
 	for row in BOARD:
 		for square in row:
-			square.tile.texture = sprite_tiles[10]
+			square.change_texture(square_textures["hidden"])
 			square.value = 0
 			square.isMine = false
-			square.isMarked = false
+			square.isFlagged = false
 			square.isRevealed = false
 				
 	_generate_mine()
@@ -47,12 +62,12 @@ func _generate_mine():
 		while true:
 			var x = rng.randi_range(0, BOARD_W-1)
 			var y = rng.randi_range(0, BOARD_H-1)
-			if !BOARD[y][x].isMine:
+			if not BOARD[y][x].isMine:
 				BOARD[y][x].isMine = true
-				for ii in range(-1, 2):
-					for jj in range(-1, 2):
-						if not (y++ii > BOARD_H-1 or x+jj > BOARD_W-1 or y+ii < 0 or x+jj < 0):
-							BOARD[y+ii][x+jj].value += 1
+				for yoff in range(-1, 2):
+					for xoff in range(-1, 2):
+						if Rect2(0, 0, BOARD_W, BOARD_H).has_point(Vector2(x+xoff, y+yoff)):
+							BOARD[y+yoff][x+xoff].value += 1
 				break
 				
 func _init_board():
@@ -61,103 +76,92 @@ func _init_board():
 		for j in range(BOARD_W):
 			var square = Square.new()
 			square.tile = Sprite.new()
-			square.tile.position = Vector2(i, j) * SQUARE_SIZE*SCALE + Vector2(SQUARE_SIZE*SCALE/2, SQUARE_SIZE*SCALE/2)
+			square.tile.centered = false
+			square.tile.position = Vector2(j, i) * SQUARE_SIZE
 			square.tile.scale = Vector2(SCALE, SCALE)
+			square.change_texture(square_textures["hidden"])
 			squares.append(square)
 			add_child(square.tile)
 		BOARD.append(squares)
 	
 	_generate_mine()
 
-	
-				
-func _load_tiles():
-	var tiles = list_files_in_directory("res://assets/tiles")
-	for file in tiles:
-		sprite_tiles.append(load("res://assets/tiles/%s" % file))
-		
-	
-func list_files_in_directory(path):
-	var files = []
-	var dir = Directory.new()
-	dir.open(path)
-	dir.list_dir_begin()
-	while true:
-		var file = dir.get_next()
-		if file == "":
-			break
-		elif not file.begins_with(".") && not file.ends_with("import"):
-			files.append(file)
-	dir.list_dir_end()
-	return files
-
 func _process(delta):
 	for row in BOARD:
 		for square in row:
 			if square.isRevealed:
-				if square.isMine:
-					pass
-				else:
-					square.tile.texture = sprite_tiles[8] if square.value == 0 else sprite_tiles[square.value-1]
-			elif square.isMarked:
-				square.tile.texture = sprite_tiles[9]
+				if not square.isMine:
+					square.change_texture(square_textures[square.value as String])
+			elif square.isFlagged:
+				square.change_texture(square_textures["flag"])
 			else:
-				square.tile.texture = sprite_tiles[10]
+				square.change_texture(square_textures["hidden"])
+				
 	if revealed == BOARD_W * BOARD_H - NUM_OF_MINES:
-		get_parent().get_child(1).get_node("face").texture = preload("res://assets/button/victory.png")
-		get_tree().paused = true		
-			
+		for row in BOARD:
+			for square in row:
+				if square.isMine:
+					square.change_texture(square_textures["flag"])
+		emit_signal("change_face", "glasses")
+		emit_signal("change_face", "glasses")
+		get_tree().paused = true
+		
 func _input(event):
 	if event is InputEventMouseButton:
-		if event.position.y >= 65 && event.position.x < 16*1.3*BOARD_W && event.position.y < 16*1.3*BOARD_H+65 \
-		&& event.position.x >= 0:
+		var BOARD_W_IN_PIXEL = SQUARE_SIZE * BOARD_W
+		var BOARD_H_IN_PIXEL = SQUARE_SIZE * BOARD_H
+		if Rect2(position, Vector2(BOARD_W_IN_PIXEL, BOARD_H_IN_PIXEL)).has_point(event.position):
 			var index = _position_to_index(to_local(event.position))
-			var square = BOARD[index.x][index.y]
+			var square = BOARD[index.y][index.x]
 			if event.button_index == BUTTON_LEFT:
 				if event.pressed && !square.isRevealed:
-					print(event.position)
-					get_parent().get_child(1).get_node("face").texture = load("res://assets/button/o.png")
+					emit_signal("change_face", "o")
 					if square.isMine:
-						_gameover(square)
+						_game_over(square)
 					_reveal(index)	
 				else:
-					get_parent().get_child(1).get_node("face").texture = load("res://assets/button/restart.png")
+					emit_signal("change_face", "smile")
 			elif event.button_index == BUTTON_RIGHT and event.pressed:
-				if !square.isRevealed:
-					if square.isMarked:
-						square.isMarked = false
-						marks += 1
-					elif marks > 0:
-						square.isMarked = true
-						marks -= 1
-	
-
+				_flag(square)
+				
+func _reveal(pos: Vector2) -> void:
+	if Rect2(0, 0, BOARD_W, BOARD_H).has_point(pos):
+		var square = BOARD[pos.y][pos.x]
+		if not (square.isRevealed || square.isMine):
+			if square.isFlagged:
+				flags += 1
+			square.isRevealed = true
+			revealed += 1
+			if square.value == 0:
+				for i in [-1, 0, 1]:
+					for j in [-1, 0, 1]:
+						_reveal(Vector2(pos.x+j, pos.y+i))
+						
+func _flag(square: Square):
+	if !square.isRevealed:
+		if square.isFlagged:
+			square.isFlagged = false
+			flags += 1
+		elif flags > 0:
+			square.isFlagged = true
+			flags -= 1
+		
 func _position_to_index(coord: Vector2) -> Vector2:
-	var x: int = coord.x / (SQUARE_SIZE*SCALE)
-	var y: int = coord.y / (SQUARE_SIZE*SCALE)
+	var x: int = coord.x / SQUARE_SIZE
+	var y: int = coord.y / SQUARE_SIZE
 	return Vector2(x, y)
 
-func _gameover(goSquare: Square):
+func _game_over(mine_square: Square) -> void:
 	for row in BOARD:
 		for square in row:
 			if square.isMine:
 				square.isRevealed = true
-				square.tile.texture = sprite_tiles[11]
-	goSquare.tile.texture = sprite_tiles[12]
-	get_parent().get_node("Clock").get_node("face").texture = preload("res://assets/button/death.png")
-	isGameOver = true
+				square.change_texture(square_textures["mine"])
+	mine_square.change_texture(square_textures["mine_red"])
+	emit_signal("change_face", "sad")
+	emit_signal("game_over")
 	get_tree().paused = true	
+
+
 	
-func _reveal(pos: Vector2):
-	#if pos.x < BOARD_W and pos.x >= 0 and pos.y < BOARD_H and pos.y >= 0:
-	if Rect2(0, 0, BOARD_W, BOARD_H).has_point(pos):
-		var square = BOARD[pos.x][pos.y]
-		if !square.isRevealed:
-			revealed += 1
-			if square.isMarked:
-				marks += 1
-			square.isRevealed = true
-			if square.value == 0:
-				for i in range(-1, 2):
-					for j in range(-1, 2):
-						_reveal(Vector2(pos.x+i, pos.y+j))
+

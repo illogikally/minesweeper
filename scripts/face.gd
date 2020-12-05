@@ -1,6 +1,5 @@
 extends Sprite
 
-
 func _ready():
 	pass
 		
@@ -9,9 +8,9 @@ func _input(event):
 		if event.button_index == BUTTON_LEFT:
 			if get_rect().has_point(to_local(event.position)):
 				if event.pressed:
-					texture = preload("res://assets/button/restart_disable.png")
-					get_parent().get_parent().restart()
+					get_parent().change_face("smile_click")
+					get_node("../../").restart()
 				else:
-					texture = preload("res://assets/button/restart.png")
+					get_parent().change_face("smile")
 					get_tree().paused = false
 

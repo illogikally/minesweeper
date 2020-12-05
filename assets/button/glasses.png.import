@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/victory.png-2b25d673bf3961628bcdc68e78fb8ab7.stex"
+path="res://.import/glasses.png-b90b0307ef15d22f04763ed8671de0c5.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/button/victory.png"
-dest_files=[ "res://.import/victory.png-2b25d673bf3961628bcdc68e78fb8ab7.stex" ]
+source_file="res://assets/button/glasses.png"
+dest_files=[ "res://.import/glasses.png-b90b0307ef15d22f04763ed8671de0c5.stex" ]
 
 [params]
 

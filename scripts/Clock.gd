@@ -1,56 +1,75 @@
 extends Node2D
 
-var sprite_clock = []
+onready var sprite_clock = get_parent().load_resource_dir("res://assets/clock")
+onready var face_textures = get_parent().load_resource_dir("res://assets/button")
+onready var SCALE = get_parent().SCALE
 var timer = 0
-var num_of_mark = 0
+onready var time_counter = [$Time1, $Time2, $Time3]
+onready var flag_counter = [$Flag1, $Flag2, $Flag3]
 
 func _ready():
-	_load_sprites()
-	$face.position = Vector2(OS.window_size.x/2, 32)
-	$face.texture = preload("res://assets/button/restart.png")
+	$Face.position = Vector2(OS.window_size.x/2, 32)
+	change_face("smile")	
+	
+	var DIGIT_SIZE = sprite_clock[0].get_size().x * SCALE
+	var pos = 40
+	for counter in flag_counter:
+		counter.position.x = pos
+		pos += DIGIT_SIZE
+		
+	pos = OS.window_size.x - 40
+	for counter in time_counter:
+		counter.position.x = pos
+		pos -= DIGIT_SIZE
+
 	for clock in get_children():
 		clock.position.y = 65/2
-	$clock3.position.x = OS.window_size.x - 40
-	$clock2.position.x = $clock3.position.x - $clock2.get_rect().size.x*1.3
-	$clock1.position.x = $clock2.position.x - $clock1.get_rect().size.x*1.3
+		clock.scale = Vector2(SCALE, SCALE)
 	
-	$clock4.position.x = 40
-	$clock5.position.x = $clock4.position.x + $clock5.get_rect().size.x*1.3
-	$clock6.position.x = $clock5.position.x + $clock6.get_rect().size.x*1.3
+	connect("game_over", self, "_game_over")
+	get_node("../Board").connect("change_face", self, "change_face")
 	
-
 func restart():
 	timer = 0
+
+func _game_over():
+	change_face("sad")
 	
-
-func _load_sprites():
-	for file in _list_files_in_directory("res://assets/clock"):
-		sprite_clock.append(load("res://assets/clock/%s" % file))
-	print(sprite_clock)
-
-
-				
 func _process(delta):			
 	timer += delta
-	$clock1.texture = sprite_clock[int(timer) / 100]
-	$clock2.texture = sprite_clock[int(timer/10) % 10]
-	$clock3.texture = sprite_clock[int(timer) % 10]
+	var digits = _extract_digit(timer as int)
+	for i in range(digits.size()):
+		_set_texture(time_counter[-i-1], digits[i])
 	
-	var marks = get_parent().get_child(0).marks
-	$clock4.texture = sprite_clock[int(marks / 100)]
-	$clock5.texture = sprite_clock[int(marks/10) % 10]
-	$clock6.texture = sprite_clock[marks % 10]
+	var flags = get_node("../Board").flags
+	digits = _extract_digit(flags)
+	for i in range(digits.size()):
+		_set_texture(flag_counter[i], digits[i])
+
+func _set_texture(counter: Sprite, value: int):
+	counter.texture = sprite_clock[value]
 	
-func _list_files_in_directory(path):
-	var files = []
-	var dir = Directory.new()
-	dir.open(path)
-	dir.list_dir_begin()
-	while true:
-		var file = dir.get_next()
-		if file == "":
-			break
-		elif not file.begins_with(".") && not file.ends_with("import"):
-			files.append(file)
-	dir.list_dir_end()
-	return files
+func _extract_digit(number: int) -> Array:
+	var digits = []
+	for i in range(3):
+		digits.append(number%10)
+		number /= 10
+	digits.invert()	
+	return digits
+	
+func change_face(face: String) -> void:
+	var faces = {
+		"glasses": face_textures[0],
+		"o": face_textures[1],
+		"sad": face_textures[2],
+		"smile": face_textures[3],
+		"smile_click": face_textures[4]
+	}
+	$Face.texture = faces[face]
+	if face == "glasses":
+		for counter in flag_counter:
+			_set_texture(counter, 0)
+	
+
+
+

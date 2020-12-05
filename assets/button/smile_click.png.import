@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/restart_disable.png-ff914143578b26d8380e023022fc7b63.stex"
+path="res://.import/smile_click.png-1d5ed6612b4a29f53675336e1a646ef2.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/button/restart_disable.png"
-dest_files=[ "res://.import/restart_disable.png-ff914143578b26d8380e023022fc7b63.stex" ]
+source_file="res://assets/button/smile_click.png"
+dest_files=[ "res://.import/smile_click.png-1d5ed6612b4a29f53675336e1a646ef2.stex" ]
 
 [params]
 
